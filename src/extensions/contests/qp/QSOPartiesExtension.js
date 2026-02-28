@@ -355,6 +355,29 @@ const ReferenceHandler = {
       bonuses: []
     }
 
+    if (qp?.rareCountyQSOMultiplier) {
+      scoring.rareCounties = scoring.rareCounties ??[]
+      theirLocations.forEach(location => {
+        const mult = qp?.rareCountyQSOMultiplier?.[location?.location]
+        if (mult) {
+          scoring.rareCounties.push(location?.location)
+          scoring.value = scoring.value * mult
+        }
+      })
+      if (scoring.rareCounties?.length >= 1) {
+        scoring.notices.push(`Rare!`)
+      }
+      if (qp.bonus?.rareCountySweep) {
+        const minimumCount = qp.bonus.rareCountySweepMinimumCount ?? qp.bonus.rareCountyQSOMultiplier?.length ?? 1
+        if (Object.keys(score?.rareCounties ?? {}).length == minimumCount - 1) {
+          if (scoring.rareCounties.find(c => !scoring.rareCounties[c] )) {
+            // If we're one short, and this QSO has a new one, replace notice with Sweep!
+            scoring.notices[scoring.notices.length - 1] = 'Rare County Sweep!'
+          }
+        }
+      }
+    }
+
     theirLocations.forEach(location => {
       const loc = location.location
       let mult
@@ -398,19 +421,28 @@ const ReferenceHandler = {
 
     const baseCall = qso?.their?.baseCall || qso?.their?.guess?.baseCall
     if (qp?.bonusStations?.[baseCall]) {
-      let bonusPrefix = ''
-      if (qp.options?.bonusPerBandMode) {
-        bonusPrefix = `${band}:${superMode}:`
-      } else if (qp.options?.bonusPerMode) {
-        bonusPrefix = `${superMode}:`
+      let mult = 1
+      if (qp?.options?.bonusStationInStateMult && weAreInState) {
+        mult = qp?.options?.bonusStationInStateMult
+      } else if (qp?.options?.bonusStationOutOfStateMult && !weAreInState) {
+        mult = qp?.options?.bonusStationOutOfStateMult
       }
-      scoring.bonusStation = baseCall
-      scoring.bonuses.push(bonusPrefix + baseCall)
-      if (score?.bonuses?.[bonusPrefix + baseCall]) {
-        scoring.infos.push('Bonus')
-      } else {
-        scoring.bonus = qp?.bonusStations?.[scoring.bonusStation]
-        scoring.notices.push('Bonus station!')
+
+      if (mult > 0) {
+        let bonusPrefix = ''
+        if (qp.options?.bonusPerBandMode) {
+          bonusPrefix = `${band}:${superMode}:`
+        } else if (qp.options?.bonusPerMode) {
+          bonusPrefix = `${superMode}:`
+        }
+        scoring.bonusStation = baseCall
+        scoring.bonuses.push(bonusPrefix + baseCall)
+        if (score?.bonuses?.[bonusPrefix + baseCall]) {
+          scoring.infos.push('Bonus')
+        } else {
+          scoring.bonus = qp?.bonusStations?.[scoring.bonusStation] * mult
+          scoring.notices.push('Bonus station!')
+        }
       }
     }
 
@@ -453,6 +485,7 @@ const ReferenceHandler = {
       weAreInState: qsoScore.weAreInState,
       total: 0,
       bonus: 0,
+      bonusTotal: 0,
       qsoCount: 0,
       qsoPoints: 0,
       dupeCount: 0,
@@ -463,7 +496,8 @@ const ReferenceHandler = {
       provinces: {},
       counties: {},
       entities: {},
-      bonusStations: {}
+      bonusStations: {},
+      rareCounties: {}
     }
 
     if (qsoScore.value === 0) {
@@ -496,6 +530,8 @@ const ReferenceHandler = {
       score.mults[mult] = (score.mults[mult] || 0) + 1
     })
 
+    let oneTimeBonuses = 0
+
     if (qsoScore.bonus) {
       score.bonus = score.bonus + qsoScore.bonus
     }
@@ -507,13 +543,24 @@ const ReferenceHandler = {
     if (qsoScore.bonusStation) {
       score.bonusStations[qsoScore.bonusStation] = score.bonus
     }
+    if (qp.bonus?.rareCountySweep && qsoScore.rareCounties) {
+      qsoScore.rareCounties.forEach(county => {
+        score.rareCounties[county] = (score.rareCounties[county] || 0) + 1
+      })
+      const minimumCount = qp.bonus.rareCountySweepMinimumCount ?? qp.bonus.rareCountyQSOMultiplier?.length ?? 1
+      if (Object.keys(score.rareCounties).length >= minimumCount) {
+        oneTimeBonuses = oneTimeBonuses + qp.bonus.rareCountySweep
+      }
+    }
 
     score.mult = Object.keys(score.mults).length
 
+    score.bonusTotal = score.bonus + oneTimeBonuses
+
     if (qp.options.bonusPostMultiplier) {
-      score.total = (score.qsoPoints * score.mult) + score.bonus
+      score.total = (score.qsoPoints * score.mult) + score.bonusTotal
     } else {
-      score.total = (score.qsoPoints + score.bonus) * score.mult
+      score.total = (score.qsoPoints + score.bonusTotal) * score.mult
     }
 
     return score
@@ -540,11 +587,11 @@ const ReferenceHandler = {
     score.label = `${qp.name}: ${fmtNumber(score.total)} points`
 
     const parts = []
-    if (score.bonus) {
+    if (score.bonusTotal > 0) {
       if (qp.options.bonusPostMultiplier) {
-        parts.push(`**${fmtNumber(score.qsoPoints)} points x ${score.mult} mults + ${fmtNumber(score.bonus)} bonus**`)
+        parts.push(`**${fmtNumber(score.qsoPoints)} points x ${score.mult} mults + ${fmtNumber(score.bonusTotal)} bonus**`)
       } else {
-        parts.push(`**${fmtNumber(score.qsoPoints)} points + ${fmtNumber(score.bonus)} bonus x ${score.mult} mults**`)
+        parts.push(`**${fmtNumber(score.qsoPoints)} points + ${fmtNumber(score.bonusTotal)} bonus x ${score.mult} mults**`)
       }
     } else {
       parts.push(`**${fmtNumber(score.qsoPoints)} points x ${score.mult} mults** ${score.dupeCount > 0 ? `(${score.dupeCount} dupe${score.dupeCount > 1 ? 's' : ''})` : ''}`)
@@ -573,6 +620,27 @@ const ReferenceHandler = {
           line += `**~~${county}~~**${county.length < longestCounty ? ' '.repeat(longestCounty - county.length) : ''} `
         } else {
           line += `${county}${county.length < longestCounty ? ' '.repeat(longestCounty - county.length) : ''} `
+        }
+      })
+      parts.push(line)
+    }
+
+    if (qp.rareCountyQSOMultiplier) {
+      parts.push(`### ${Object.keys(score?.rareCounties ?? {}).length} Rare Counties`)
+
+      if (qp.bonus?.rareCountySweep) {
+        const minimumCount = qp.bonus.rareCountySweepMinimumCount ?? qp.bonus.rareCountyQSOMultiplier?.length ?? 1
+        if (Object.keys(score?.rareCounties ?? {}).length >= minimumCount) {
+          parts[parts.length - 1] = parts[parts.length - 1] + ` • **Sweep! +${fmtNumber(qp.bonus.rareCountySweep)} points**`
+        }
+      }
+
+      line = '> '
+      Object.keys(qp.rareCountyQSOMultiplier).sort().forEach(county => {
+        if (score.rareCounties[county]) {
+          line += `**~~${county}~~** `
+        } else {
+          line += `${county} `
         }
       })
       parts.push(line)

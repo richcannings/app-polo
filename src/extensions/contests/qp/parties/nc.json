@@ -3,36 +3,22 @@
   "name": "North Carolina QSO Party",
   "short": "NCQP",
   "url": "https://ncqsoparty.org/",
-  "start": "2025-2-23 15:00Z",
-  "end": "2025-2-24 00:59Z",
+  "start": "2026-3-1 15:00Z",
+  "end": "2025-3-2 00:59Z",
   "cabrilloName": "NC-QSO-PARTY",
   "notes": "FT8/FT4 is allowed, but not supported in PoLo.",
   "internalNotes": "Best doc so far, but worst county list.",
-  "lastUpdated": "2025-02-19 12:00Z",
-  "status": "Verified for 2025",
-  "bonusStations": {
-    "K4MN": 50,
-    "WA4TRS": 50,
-    "W4YK": 50,
-    "K4EG": 50,
-    "WA4J": 50,
-    "W4YSB": 50,
-    "NI4BK": 50,
-    "NC4OC": 50,
-    "WW4DC": 50,
-    "W4DW": 50,
-    "AA4RV": 50
-  },
-  "bonusPoints": {
-    "roverPerCountyActivated": 100
-  },
+  "lastUpdated": "2026-02-28 12:00Z",
+  "status": "Verified for 2026, including rare county bonuses",
+  "bonusPoints": {},
   "options": {
     "dcCountsAsMaryland": false,
     "stateCountsForInState": false,
     "selfCountsForCounty": true,
     "selfSpotting": true,
     "countyLine": true,
-    "dxIsMultiplier": true
+    "dxIsMultiplier": true,
+    "bonusPostMultiplier": true
   },
   "entry": {
     "In State": {},
@@ -42,6 +28,22 @@
     "PHONE": 2,
     "CW": 3,
     "DATA": 5
+  },
+  "bonus": {
+    "rareCountySweep": 500,
+    "rareCountySweepMinimumCount": 5
+  },
+  "rareCountyQSOMultiplier": {
+    "CAB": 10,
+    "GRM": 10,
+    "VAN": 10,
+    "MAC": 10,
+    "DAV": 10,
+    "CUR": 10,
+    "PAM": 10,
+    "ALL": 10,
+    "PER": 10,
+    "CAS": 10
   },
   "counties": {
     "ALA": "Alamance",

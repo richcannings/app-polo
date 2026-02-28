@@ -3,13 +3,15 @@
   "name": "Idaho QSO Party",
   "short": "IDQP",
   "url": "https://idahoqsoparty.org/",
-  "start": "2025-3-8 19:00Z",
-  "end": "2025-3-9 18:59Z",
+  "start": "2026-3-14 16:00Z",
+  "end": "2026-3-15 03:59Z",
+  "secondStart": "2026-3-15 14:00Z",
+  "secondEnd": "2026-3-16 01:59Z",
   "cabrilloName": "ID-QSO-PARTY",
-  "notes": "Scoring does not include bonus points. QRP points will be incorrect.",
+  "notes": "QRP points will be incorrect. Some bonus points will be incorrect.",
   "internalNotes": "For QRP all modes score as 5. Worst rules doc so far.",
-  "lastUpdated": "2025-02-19 12:00Z",
-  "status": "Updated for 2025, but not verified",
+  "lastUpdated": "2026-02-28 12:00Z",
+  "status": "Updated for 2026, but not verified",
   "bonusStations": {
     "K7S": 100,
     "K7P": 100,
@@ -17,16 +19,18 @@
     "K7D": 100
   },
   "bonus": {
-    "Bonus Station Sweep": 100
+    "bonusStationSweep": 100
   },
   "options": {
     "dcCountsAsMaryland": true,
+    "stateCountsForInState": true,
     "multsPerMode": true,
     "countyLine": true,
     "selfSpotting": true,
     "dxEntityIsMultiplier": true,
     "dxLocationIsPrefix": true,
-    "removeCountySuffixes": true
+    "removeCountySuffixes": true,
+    "bonusStationInStateMult": 0
   },
   "points": {
     "PHONE": 1,

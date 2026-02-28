@@ -3,13 +3,13 @@
   "name": "Wisconsin QSO Party",
   "short": "WIQP",
   "url": "https://www.warac.org/wqp/wqp.htm",
-  "start": "2025-3-9 18:00Z",
-  "end": "2025-3-10 00:59Z",
+  "start": "2026-3-15 18:00Z",
+  "end": "2026-3-16 00:59Z",
   "cabrilloName": "WI-QSO-PARTY",
   "notes": "Scoring does not include bonus points.",
   "internalNotes": "",
-  "lastUpdated": "2025-02-19 12:00Z",
-  "status": "Updated for 2025, but not verified",
+  "lastUpdated": "2026-02-28 12:00Z",
+  "status": "Updated for 2026, but not verified",
   "bonusStations": {
     "W9FK": 100
   },

@@ -30,16 +30,20 @@ The `"points":` section is used to define the point values for each exchange ite
 - `_Rover_`: Contacting a rover station, overrides other modes. [Not Implemented yet]
 - `_QRP_`: Operating as QRP, overrides other modes. [Not Implemented yet]
 
-Additionally, the `"pointMultipliers":` section is used to define additional point multipliers for certain conditions.
+The `"pointMultipliers":` section is used to define additional point multipliers for certain conditions.
 
 - `PORTABLE`: Portable points multiplier
 - `MOBILE`: Mobile points multiplier
 
-And the `powerMultiplier` section is used to define additional point multipliers for certain power levels.
+The `powerMultiplier` section is used to define additional point multipliers for certain power levels.
 
 - `QRP`: QRP points multiplier
 - `LP`: LP points multiplier
 - `HP`: HP points multiplier
+
+The `rareCountyQSOMultiplier` section is used to define additional QSO point multipliers for rare counties. (used by NC)
+
+The `bonusStations` section is used to define extra points for certain bonus stations. (used by many)
 
 Relevant `"options"`:
 
@@ -48,6 +52,8 @@ Relevant `"options"`:
 - `qsosPerMode`: If true, QSOs are counted per mode. (?)
 - `inStateToOutOfStatePointsDouble`: If true, in-state to out-of-state QSOs are worth double points (Used by SC)
 - `dataAndCWCountAsSameMode`: If true, DATA and CW are counted as the same mode. (LA)
+- `bonusStationInStateMult`: A number to multiply bonus station points for in-state participants.
+- `bonusStationOutOfStateMult`: A number to multiply bonus station points for out-of-state participants. (ID)
 
 ### Multipliers
 
@@ -80,6 +86,10 @@ Relevant `"options"`:
 - `bonusPostMultiplier`: If true (default), bonus points are added after the multiplier is applied. (BC, SC, NC)
 - `bonusPerBandMode`: If true, bonus points are awarded per band and mode. (Some)
 - `bonusPerMode`: If true, bonus points are awarded per mode. (WA Salmon Run)
+- `rareCountySweep`: If true, bonus points are awarded for a sweep of rare counties. (NC)
+- `rareCountySweepMinimumCount`: If set, the minimum number of rare counties worked required to earn the rare county sweep bonus. (NC)
+- `bonusStationSweep`: If true, bonus points are awarded for a sweep of bonus stations. (ID)
+- `bonusStationSweepMinimumCount`: If set, the minimum number of bonus stations worked required to earn the bonus station sweep bonus. (ID)
 
 ### Other Options
 - `countyToState`: Provides a mapping of county abbreviations to state abbreviations. Needed for some multi-state events (CPQP)
