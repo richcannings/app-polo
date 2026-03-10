@@ -117,6 +117,7 @@ export function analyzeAndSectionQSOs({ qsos, operation, showDeletedQSOs = true 
         }
       })
     }
+
     currentSection.data.push(qso)
 
     if (qso.deleted) {

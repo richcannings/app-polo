@@ -110,6 +110,7 @@ export const generateActivityScorer = ({ info }) => {
 
       if (notices.length === 0 && nearDupes.length > 0) {
         alerts.push('duplicate')
+        score.dupe = 1
         score.value = 0
       }
 
@@ -138,6 +139,7 @@ export const generateActivityDailyAccumulator = ({ info }) => {
       activatedQSOs: 0,
       activatedRefs: {},
       huntedRefs: {},
+      dupes: 0,
       for: 'day'
     }
 
@@ -152,6 +154,10 @@ export const generateActivityDailyAccumulator = ({ info }) => {
         score.huntedQSOs = score.huntedQSOs + 1
         if (scoredRef?.ref) score.huntedQSOsWhileActivating = score.huntedQSOsWhileActivating + 1
       })
+    }
+
+    if (qsoScore?.dupe) {
+      score.dupes = score.dupes + 1
     }
 
     return score
@@ -176,6 +182,7 @@ export const generateActivityOperationAccumulator = ({ info }) => {
       activatedQSOs: 0,
       activatedRefs: {},
       huntedRefs: {},
+      dupes: 0,
       for: 'operation'
     }
 
@@ -190,6 +197,10 @@ export const generateActivityOperationAccumulator = ({ info }) => {
         score.huntedQSOs = score.huntedQSOs + 1
         if (scoredRef?.ref) score.huntedQSOsWhileActivating = score.huntedQSOsWhileActivating + 1
       })
+    }
+
+    if (qsoScore?.dupe) {
+      score.dupes = score.dupes + 1
     }
 
     return score
@@ -228,9 +239,23 @@ export const generateActivitySumarizer = ({ info }) => {
     if (score.huntedRefs?.length > 0) {
       const count = Object.keys(score.huntedRefs).length
       if (activatedRefKeys.length > 0) {
-        summaryParts.push(t([`extensions.${info.key}.scoring.ref2refRefsCount`, "extensions.shared.scoring.ref2refRefsCount"], "{{fmtCount}} refs", { count, fmtCount: fmtNumber(count) }))
+        summaryParts.push(t(
+          [`extensions.${info.key}.scoring.ref2refRefsCount`, "extensions.shared.scoring.ref2refRefsCount"],
+          "{{fmtCount}} refs",
+          {
+            count,
+            fmtCount: fmtNumber(count)
+          }
+        ))
       } else {
-        summaryParts.push(t([`extensions.${info.key}.scoring.huntedRefsCount`, "extensions.shared.scoring.huntedRefsCount"], "{{fmtCount}} refs", { count, fmtCount: fmtNumber(count) }))
+        summaryParts.push(t(
+          [`extensions.${info.key}.scoring.huntedRefsCount`, "extensions.shared.scoring.huntedRefsCount"],
+          "{{fmtCount}} refs",
+          {
+            count,
+            fmtCount: fmtNumber(count)
+          }
+        ))
       }
     }
     score.summary = summaryParts.join(' +')
@@ -240,15 +265,46 @@ export const generateActivitySumarizer = ({ info }) => {
     score.longSummary = ''
     const qsoCounts = []
     if (activatedRefKeys?.length > 0) {
-      qsoCounts.push(t([`extensions.${info.key}.scoring.activatorQSOsCount`, "extensions.shared.scoring.activatorQSOsCount"], "{{fmtCount}} QSOs", { count: score.activatedQSOs, fmtCount: fmtNumber(score.activatedQSOs) }))
+      qsoCounts.push(t(
+        [`extensions.${info.key}.scoring.activatorQSOsCount`, "extensions.shared.scoring.activatorQSOsCount"],
+        "{{fmtCount}} QSOs",
+        {
+          count: score.activatedQSOs,
+          fmtCount: fmtNumber(score.activatedQSOs)
+        }
+      ))
     }
     if (score?.huntedQSOs > 0) {
       if (activatedRefKeys?.length > 0) {
-        qsoCounts.push(t([`extensions.${info.key}.scoring.ref2refQSOsCount`, "extensions.shared.scoring.ref2refQSOsCount"], "{{fmtCount}} QSOs", { count: score.huntedQSOs, fmtCount: fmtNumber(score.huntedQSOs) }))
+        qsoCounts.push(t(
+          [`extensions.${info.key}.scoring.ref2refQSOsCount`, "extensions.shared.scoring.ref2refQSOsCount"],
+          "{{fmtCount}} QSOs",
+          {
+            count: score.huntedQSOs, fmtCount: fmtNumber(score.huntedQSOs)
+          }
+        ))
       } else {
-        qsoCounts.push(t([`extensions.${info.key}.scoring.huntedQSOsCount`, "extensions.shared.scoring.huntedQSOsCount"], "{{fmtCount}} QSOs", { count: score.huntedQSOs, fmtCount: fmtNumber(score.huntedQSOs) }))
+        qsoCounts.push(t(
+          [`extensions.${info.key}.scoring.huntedQSOsCount`, "extensions.shared.scoring.huntedQSOsCount"],
+          "{{fmtCount}} QSOs",
+          {
+            count: score.huntedQSOs,
+            fmtCount: fmtNumber(score.huntedQSOs)
+          }
+        ))
       }
     }
+    if (score?.dupes > 0) {
+      qsoCounts.push(t(
+        [`extensions.${info.key}.scoring.dupesCount`, "extensions.shared.scoring.dupesCount"],
+        "{{fmtCount}} dupes",
+        {
+          count: score.dupes,
+          fmtCount: fmtNumber(score.dupes)
+        }
+      ))
+    }
+
     score.longSummary += qsoCounts.join(' • ')
 
     if (activatedRefKeys.length > 0) {
