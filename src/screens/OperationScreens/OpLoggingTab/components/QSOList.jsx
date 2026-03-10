@@ -61,7 +61,7 @@ const QSOList = React.memo(function QSOList ({ style, ourInfo, settings, qsos, s
   // useEffect(() => console.log('-- QSOList stylesForOtherOperator', stylesForOtherOperator), [stylesForOtherOperator])
   // useEffect(() => console.log('-- QSOList listRef', listRef), [listRef])
 
-  const firstScrollToEnd = useRef(false)
+  const lastScrolledTo = useRef(undefined)
 
   // When a new QSO is logged, scroll to the bottom of the list
   useEffect(() => {
@@ -70,10 +70,11 @@ const QSOList = React.memo(function QSOList ({ style, ourInfo, settings, qsos, s
     const lastSection = sections[sections.length - 1]
     const lastQSO = lastSection.data[lastSection.data.length - 1]
 
-    if (firstScrollToEnd.current === false) {
-      firstScrollToEnd.current = true
+    if (lastScrolledTo.current === undefined) {
+      lastScrolledTo.current = lastQSO?.uuid ?? true
       listRef.current?.scrollToEnd({ animated: false })
-    } else if (lastUUID === lastQSO?.uuid) {
+    } else if (lastUUID === lastQSO?.uuid && lastScrolledTo.current !== lastQSO?.uuid) {
+      lastScrolledTo.current = lastQSO?.uuid
       listRef.current?.scrollToEnd({ animated: true })
     }
   }, [listRef, lastUUID, selectedUUID, sections])

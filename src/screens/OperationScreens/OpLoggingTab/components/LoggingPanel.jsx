@@ -360,7 +360,7 @@ export default function LoggingPanel ({
           qso.their.call = call
           if (allCalls.length > 1) { // If this is a multi-call QSO, we need to clone and annotate the QSO for each call
             oneQSO = cloneDeep(qso)
-            if (i > 0) oneQSO.uuid = null
+            if (i > 0) oneQSO.uuid = UUID.v4()
             oneQSO.their.call = allCalls[i]?.trim()
             oneQSO.their.guess = {}
             oneQSO.their.lookup = {}
