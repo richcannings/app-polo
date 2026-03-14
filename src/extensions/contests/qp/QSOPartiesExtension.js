@@ -379,7 +379,7 @@ const ReferenceHandler = {
     }
 
     theirLocations.forEach(location => {
-      const loc = location.location
+      let loc = location.location
       let mult
       if (loc) {
         if (qp?.counties?.[loc]) {
