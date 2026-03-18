@@ -25,6 +25,7 @@ import { totaFindAllByLocation, totaFindOneByReference, registerTOTADataFile } f
 import { TOTAActivityOptions } from './TOTAActivityOptions'
 import { TOTALoggingControl } from './TOTALoggingControl'
 import { TOTAPostSelfSpot } from './TOTAPostSelfSpot'
+import { TOTAPostOtherSpot } from './TOTAPostOtherSpot'
 
 const Extension = {
   ...Info,
@@ -55,6 +56,7 @@ const ActivityHook = {
     }
   },
   postSelfSpot: TOTAPostSelfSpot,
+  postOtherSpot: TOTAPostOtherSpot,
   Options: TOTAActivityOptions,
   generalHuntingType: ({ operation, settings }) => Info.huntingType,
   sampleOperations: ({ t, settings, callInfo }) => {
