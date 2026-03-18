@@ -3,13 +3,13 @@
   "name": "Louisiana QSO Party",
   "short": "LAQP",
   "url": "https://laqp.louisianacontestclub.org/",
-  "start": "2025-4-5 14:00Z",
-  "end": "2025-4-6 01:59Z",
+  "start": "2026-4-4 14:00Z",
+  "end": "2026-4-5 01:59Z",
   "cabrilloName": "LA-QSO-PARTY",
   "notes": "The website had no updated rules when this was last reviewed. Dupes are not correctly handled if you work both CW and RTTY.",
   "internalNotes": "",
-  "lastUpdated": "2025-03-02 12:00Z",
-  "status": "Based on 2024 rules",
+  "lastUpdated": "2026-03-18 12:00Z",
+  "status": "Based on 2025 rules, not yet verified for 2026.",
   "bonusStations": {
     "N5LCC": 100
   },

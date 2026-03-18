@@ -1,17 +1,19 @@
 {
   "key": "QC",
   "name": "Quebec QSO Party",
-  "start": "2025-4-20 12:00Z",
-  "end": "2025-4-20 22:00Z",
-  "status": "Pending",
+  "url": "https: //quebecqsoparty.org/",
+  "start": "2026-4-19 13:00Z",
+  "end": "2026-4-19 23:59Z",
+  "status": "Updated for 2026, but not yet verified. Mobile station bonuses not implemented yet.",
   "cabrilloName": "QC-QSO-PARTY",
   "notes": "Contributed by W1GRL & W1BOY",
-  "lastUpdated": "2025-03-27 20:00Z",
+  "lastUpdated": "2026-03-18 12:00Z",
   "options": {
-    "countyLine": false,
+    "countyLine": true,
     "dcCountsAsMaryland": true,
-    "stateCountsForInState": false,
+    "stateCountsForInState": true,
     "multsPerBandMode": false,
+    "multsPerBand": true,
     "dxIsMultiplier": true,
     "selfSpotting": true,
     "entity": "VE"
@@ -20,23 +22,26 @@
     "PHONE": 1,
     "CW": 2
   },
+  "bonusStations": {
+    "VE2CRO": 10
+  },
   "counties": {
-     "BSA": "Bas Saint-Laurent",
-     "SLS": "Saguenay-Lac-Saint-Jean",
-     "QUE": "National Capital",
-     "MAU": "Mauricie",
-     "ETE": "Estrie",
-     "MTL": "Montreal",
-     "OTS": "Outaouais",
-     "ATE": "Abitibi-Temiscamingue",
-     "CND": "Cote-Nord",
-     "NDQ": "Nord-du-Quebec",
-     "GIM": "Gaspesie-îles-de-la-Madeleine",
-     "CAS": "Chaudiere-Appalaches",
-     "LVL": "Laval",
-     "LDE": "Lanaudiere",
-     "LNS": "Laurentides",
-     "MEE": "Monteregie",
-     "CDQ": "Centre-du-Quebec"
-   }
+    "BSA": "Bas Saint-Laurent",
+    "SLS": "Saguenay-Lac-Saint-Jean",
+    "QUE": "National Capital",
+    "MAU": "Mauricie",
+    "ETE": "Estrie",
+    "MTL": "Montreal",
+    "OTS": "Outaouais",
+    "ATE": "Abitibi-Temiscamingue",
+    "CND": "Cote-Nord",
+    "NDQ": "Nord-du-Quebec",
+    "GIM": "Gaspesie-îles-de-la-Madeleine",
+    "CAS": "Chaudiere-Appalaches",
+    "LVL": "Laval",
+    "LDE": "Lanaudiere",
+    "LNS": "Laurentides",
+    "MEE": "Monteregie",
+    "CDQ": "Centre-du-Quebec"
+  }
 }
