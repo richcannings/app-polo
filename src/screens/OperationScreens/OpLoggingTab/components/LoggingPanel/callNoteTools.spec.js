@@ -62,7 +62,7 @@ describe('combineCallNotes', () => {
         { call: 'W1AW', note: '⚓ QRQ Crew #9' }
       ]
       const result = combineCallNotes(notes, theirInfo)
-      expect(result.note).toBe('🍄⚓ QRQ Crew #9')
+      expect(result.note).toBe('⚓🍄 DitDit Club')
       expect(result.emoji).toBe('🍄')
     })
 
@@ -72,7 +72,7 @@ describe('combineCallNotes', () => {
         { call: 'W1AW', note: '⚓ Last note text' }
       ]
       const result = combineCallNotes(notes, theirInfo)
-      expect(result.note).toBe('🍄⚓ Last note text')
+      expect(result.note).toBe('⚓🍄 First note text')
     })
 
     it('deduplicates same emoji from multiple notes', () => {
@@ -81,7 +81,7 @@ describe('combineCallNotes', () => {
         { call: 'W1AW', note: '🍄 Club B' }
       ]
       const result = combineCallNotes(notes, theirInfo)
-      expect(result.note).toBe('🍄 Club B')
+      expect(result.note).toBe('🍄 Club A')
     })
 
     it('handles mix of notes with and without emojis', () => {
@@ -91,7 +91,7 @@ describe('combineCallNotes', () => {
         { call: 'W1AW', note: '⚓ Also has emoji' }
       ]
       const result = combineCallNotes(notes, theirInfo)
-      expect(result.note).toBe('🍄⚓ Also has emoji')
+      expect(result.note).toBe('⚓🍄 Has emoji')
     })
   })
 
@@ -104,7 +104,7 @@ describe('combineCallNotes', () => {
         { call: 'W1AW', note: '🐧 Four' }
       ]
       const result = combineCallNotes(notes, theirInfo)
-      expect(result.note).toBe('🍄⚓🎉🐧 Four')
+      expect(result.note).toBe('🐧🎉⚓🍄 One')
     })
 
     it('shows +N overflow indicator when more than 4 emojis', () => {
@@ -116,7 +116,7 @@ describe('combineCallNotes', () => {
         { call: 'W1AW', note: '🌊 Five' }
       ]
       const result = combineCallNotes(notes, theirInfo)
-      expect(result.note).toBe('🍄⚓🎉🐧+1 Five')
+      expect(result.note).toBe('🐧🎉⚓🍄+1 One')
     })
 
     it('shows correct overflow count for many emojis', () => {
@@ -130,7 +130,32 @@ describe('combineCallNotes', () => {
         { call: 'W1AW', note: '👑 Seven' }
       ]
       const result = combineCallNotes(notes, theirInfo)
-      expect(result.note).toBe('🍄⚓🎉🐧+3 Seven')
+      expect(result.note).toBe('🐧🎉⚓🍄+3 One')
+    })
+  })
+
+  describe('multiple notes from multiple sources', () => {
+    const theirInfo = { baseCall: 'KI2D', call: 'KI2D' }
+    it('combines notes from multiple sources', () => {
+      const notes = [
+        { call: 'KI2D', note: '🌄 HVCDX Member', source: 'HVCDX Members' },
+        { call: 'KI2D', note: '🤩 Ham2K PoLo Creator', source: 'Ham2K Notes' },
+        { call: 'KI2D', note: '☕️ Ham2K Supporter', source: 'Ham2K Notes' },
+      ]
+      const result = combineCallNotes(notes, theirInfo)
+      expect(result.note).toBe('🌄☕️🤩 Ham2K PoLo Creator')
+      expect(result.emoji).toBe('🤩')
+    })
+
+    it('combines notes from multiple sources in different order', () => {
+      const notes = [
+        { call: 'KI2D', note: '🤩 Ham2K PoLo Creator', source: 'Ham2K Notes' },
+        { call: 'KI2D', note: '☕️ Ham2K Supporter', source: 'Ham2K Notes' },
+        { call: 'KI2D', note: '🌄 HVCDX Member', source: 'HVCDX Members' },
+      ]
+      const result = combineCallNotes(notes, theirInfo)
+      expect(result.note).toBe('☕️🤩🌄 HVCDX Member')
+      expect(result.emoji).toBe('🌄')
     })
   })
 
@@ -142,7 +167,7 @@ describe('combineCallNotes', () => {
         { call: 'W1AW', note: '🎉 Also matches' }
       ]
       const result = combineCallNotes(notes, theirInfo)
-      expect(result.note).toBe('🍄🎉 Also matches')
+      expect(result.note).toBe('🎉🍄 Matches')
     })
   })
 })

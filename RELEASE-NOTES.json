@@ -1,4 +1,19 @@
 {
+  "26.2.3": {
+    "name": "February '26 (patch 3)",
+    "photoCaption": "HB9/OK1PTR/P at CH-0165",
+    "changes": [
+      "Fixed bug in call notes display"
+    ]
+  },
+  "26.2.2": {
+    "name": "February '26 (patch 2)",
+    "photoCaption": "HB9/OK1PTR/P at CH-0165",
+    "changes": [
+      "Fixed bug in scrolling to last QSO",
+      "Fixed bug in Idaho QSO Party when logging a DX exchange"
+    ]
+  },
   "26.2.1": {
     "name": "February '26 (patch 1)",
     "photoCaption": "HB9/OK1PTR/P at CH-0165",
