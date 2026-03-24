@@ -293,10 +293,10 @@ export function fmtDateTimeRelative(t, { now = null, roundTo = false } = {}) {
   if (t && t.toLocaleTimeString) {
     if (t < now) {
       const time = fmtTimeBetween(t, now, { roundTo })
-      return GLOBAL?.t?.(['general.formatting.time.ago', '{{time}} ago'], { time }) || `${time} ago`
+      return GLOBAL?.t?.('general.formatting.time.ago', '{{time}} ago', { time }) || `${time} ago`
     } else {
       const time = fmtTimeBetween(t, now, { roundTo })
-      return GLOBAL?.t?.(['general.formatting.time.fromNow', '{{time}} from now'], { time }) || `${time} from now`
+      return GLOBAL?.t?.('general.formatting.time.fromNow', '{{time}} from now', { time }) || `${time} from now`
     }
   } else {
     return ''

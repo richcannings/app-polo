@@ -8,8 +8,8 @@
 import GLOBAL from '../GLOBAL'
 
 export function joinAnd(parts, { separator, conjunction, final } = {}) {
-  separator = separator || GLOBAL?.t?.(['general.formatting.list.separator', ', ']) || ', '
-  conjunction = conjunction || GLOBAL?.t?.(['general.formatting.list.conjunction', ' and ']) || ' and '
+  separator = separator || GLOBAL?.t?.('general.formatting.list.separator', ', ') || ', '
+  conjunction = conjunction || GLOBAL?.t?.('general.formatting.list.conjunction', ' and ') || ' and '
   final = final || GLOBAL?.t?.(['general.formatting.list.final', 'general.formatting.list.conjunction'], conjunction) || conjunction
 
   if (parts.length === 0) return ''
