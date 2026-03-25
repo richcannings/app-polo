@@ -165,7 +165,7 @@ const ReferenceHandler = {
 
   adifFieldsForOneQSO: ({ qso, operation }) => {
     const ref = findRef(operation, Info.key)
-    const qsoRef = findRef(qso, Info.key)
+    const qsoRef = findRef(qso, Info.key) || {}
     const qp = qpData({ ref })
 
     const hasNumbers = (qp?.exchange?.find(field => field === 'Number') !== undefined)
