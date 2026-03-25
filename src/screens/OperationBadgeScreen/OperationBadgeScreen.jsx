@@ -105,8 +105,10 @@ export default function OperationBadgeScreen ({ navigation, route }) {
     dispatch(loadOperation(route.params.operation.uuid))
   }, [route.params.operation.uuid, dispatch])
 
-  const qsosSelector = useCallback((state) => selectQSOs(state, route.params.operation.uuid), [route.params.operation.uuid])
-  const qsos = useSelector(qsosSelector)
+  const allQsosSelector = useCallback((state) => selectQSOs(state, route.params.operation.uuid), [route.params.operation.uuid])
+  const allQsos = useSelector(allQsosSelector)
+
+  const qsos = useMemo(() => allQsos.filter(qso => !qso.deleted && !qso.event), [allQsos])
 
   const qth = useMemo(() => {
     try {

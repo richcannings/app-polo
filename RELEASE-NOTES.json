@@ -1,4 +1,12 @@
 {
+  "26.2.4": {
+    "name": "February '26 (patch 4)",
+    "photoCaption": "HB9/OK1PTR/P at CH-0165",
+    "changes": [
+      "Fixed bug in ADIF export for QSO Parties",
+      "Fixed QSO count in full-screen map view"
+    ]
+  },
   "26.2.3": {
     "name": "February '26 (patch 3)",
     "photoCaption": "HB9/OK1PTR/P at CH-0165",
