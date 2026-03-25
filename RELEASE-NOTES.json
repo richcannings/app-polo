@@ -3,6 +3,8 @@
     "name": "February '26 (patch 4)",
     "photoCaption": "HB9/OK1PTR/P at CH-0165",
     "changes": [
+      "Enable spotting others for Towers on the Air (by M1SDH)",
+      "Show reference counts in controls, instead of just a checkmark (by M1SDH)",
       "Fixed bug in ADIF export for QSO Parties",
       "Fixed QSO count in full-screen map view"
     ]
