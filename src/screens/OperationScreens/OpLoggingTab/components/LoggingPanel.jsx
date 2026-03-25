@@ -452,8 +452,8 @@ export default function LoggingPanel ({
   }, [operationError, commandInfo?.message, loggingState.infoMessage])
 
   const disableSubmit = useMemo(() => {
-    return !((isValidQSO && isValidOperation) || commandInfo?.matchingCommand)
-  }, [isValidQSO, isValidOperation, commandInfo?.matchingCommand])
+    return !((isValidQSO && isValidOperation) || commandInfo?.match)
+  }, [isValidQSO, isValidOperation, commandInfo?.match])
 
   return (
     <View style={styles.root}>
