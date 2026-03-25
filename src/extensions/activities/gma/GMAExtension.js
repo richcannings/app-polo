@@ -6,8 +6,11 @@
  */
 
 import { parseCallsign } from '@ham2k/lib-callsigns'
+import { annotateFromCountryFile } from '@ham2k/lib-country-files'
+import { gridToLocation } from '@ham2k/lib-maidenhead-grid'
+
 import { loadDataFile, removeDataFile } from '../../../store/dataFiles/actions/dataFileFS'
-import { findRef, refsToString } from '../../../tools/refTools'
+import { filterRefs, findRef, refsToString } from '../../../tools/refTools'
 import { LOCATION_ACCURACY } from '../../constants'
 
 import { GMAActivityOptions } from './GMAActivityOptions'
@@ -15,8 +18,6 @@ import { registerGMADataFile, gmaFindOneByReference, gmaFindAllByLocation } from
 import { Info } from './GMAInfo'
 import { GMALoggingControl } from './GMALoggingControl'
 import { GMAPostSelfSpot } from './GMAPostSelfSpot'
-import { annotateFromCountryFile } from '@ham2k/lib-country-files'
-import { gridToLocation } from '@ham2k/lib-maidenhead-grid'
 import { distanceOnEarth } from '../../../tools/geoTools'
 import { GMAPostOtherSpot } from './GMAPostOtherSpot'
 
