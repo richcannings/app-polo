@@ -8,7 +8,7 @@
 import { findRef } from './refTools'
 import { fmtCabrilloDate, fmtCabrilloTime } from './timeFormats'
 
-export function qsonToCabrillo({ operation, qsos, settings, handler, combineSegmentRefs }) {
+export function qsonToCabrillo ({ operation, qsos, settings, handler, combineSegmentRefs }) {
   const ref = findRef(operation, handler.key)
 
   let str = ''
@@ -75,12 +75,12 @@ const DEFAULT_FREQUENCIES_PER_BAND = {
   '13cm': '2.3G'
 }
 
-function cabrilloFreq(qso) {
+function cabrilloFreq (qso) {
   if (qso.freq) return `${Math.round(qso.freq)}`
   else return DEFAULT_FREQUENCIES_PER_BAND[qso.band] ?? '0'
 }
 
-function cabrilloMode(qso) {
+function cabrilloMode (qso) {
   if (qso?.mode === 'SSB') return 'PH'
   else if (qso?.mode === 'USB') return 'PH'
   else if (qso?.mode === 'LSB') return 'PH'

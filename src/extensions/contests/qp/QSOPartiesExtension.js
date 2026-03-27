@@ -279,16 +279,16 @@ const ReferenceHandler = {
     for (const ourLocation of ourLocations) {
       for (const theirLocation of theirLocations) {
         const row = []
-        row.push((ourCall ?? ' ').padEnd(13, ' '))
+        row.push((ourCall ?? '-').padEnd(13, ' '))
         row.push((qso?.mode === 'CW' || qso?.mode === 'RTTY' ? settings?.defaultReportCW || '599' : settings?.defaultReport || '59').padEnd(3, ' '))
-        if (hasNumbers) row.push((qsoRef.ourNumber ?? ' ').padEnd(6, ' '))
-        if (hasNames) row.push((ref.ourName ?? ' ').padEnd(10, ' '))
-        row.push((ourLocation ?? ' ').padEnd(6, ' '))
-        row.push((qso?.their?.call ?? '').padEnd(13, ' '))
+        if (hasNumbers) row.push((qsoRef.ourNumber ?? '0').padEnd(6, ' '))
+        if (hasNames) row.push((ref.ourName ?? '-').padEnd(10, ' '))
+        row.push((ourLocation ?? '-').padEnd(6, ' '))
+        row.push((qso?.their?.call ?? '-').padEnd(13, ' '))
         row.push((qso?.mode === 'CW' || qso?.mode === 'RTTY' ? settings?.defaultReportCW || '599' : settings?.defaultReport || '59').padEnd(3, ' '))
-        if (hasNumbers) row.push((qsoRef.theirNumber ?? ' ').padEnd(6, ' '))
-        if (hasNames) row.push((qsoRef.theirName ?? ' ').padEnd(10, ' '))
-        row.push((theirLocation ?? ' ').padEnd(6, ' '))
+        if (hasNumbers) row.push((qsoRef.theirNumber ?? '-').padEnd(6, ' '))
+        if (hasNames) row.push((qsoRef.theirName ?? '-').padEnd(10, ' '))
+        row.push((theirLocation ?? '-').padEnd(6, ' '))
         rows.push(row)
       }
     }
@@ -303,23 +303,23 @@ const ReferenceHandler = {
     const qp = qpData({ ref: scoredRef })
     // console.log('scoringForQSO', qso.key, scoredRef)
 
-    let ourLocations = qpParseLocations({ qp, location: scoredRef?.location })
+    const ourLocations = qpParseLocations({ qp, location: scoredRef?.location })
     // console.log('-- ourLocations', ourLocations)
-    let weAreInState = ourLocations?.every(loc => loc.inState)
+    const weAreInState = ourLocations?.every(loc => loc.inState)
 
     const qsoRef = findRef(qso, Info.key)
 
     let theirLocations = qpParseLocations({ qp, location: qsoRef?.location, weAreInState })
-    let theyAreInState = theirLocations?.every(loc => loc.inState)
+    const theyAreInState = theirLocations?.every(loc => loc.inState)
     // console.log('-- theirLocations', theirLocations)
 
-    const locationGuess = qsoRef?.location ?? _defaultLocationFor({ qso, qp, qsos, operation })
+    // const locationGuess = qsoRef?.location ?? _defaultLocationFor({ qso, qp, qsos, operation })
 
     if (!weAreInState && !theyAreInState) {
       theirLocations = []
     }
 
-    const { band, mode, key, startAtMillis } = qso
+    const { band, mode } = qso
 
     if (INVALID_BANDS.indexOf(band) >= 0 || (qp.options?.invalidBands || []).indexOf(band) >= 0) {
       return { value: 0, alerts: ['invalidBand'], type: Info.key, weAreInState }
@@ -356,7 +356,7 @@ const ReferenceHandler = {
     }
 
     if (qp?.rareCountyQSOMultiplier) {
-      scoring.rareCounties = scoring.rareCounties ??[]
+      scoring.rareCounties = scoring.rareCounties ?? []
       theirLocations.forEach(location => {
         const mult = qp?.rareCountyQSOMultiplier?.[location?.location]
         if (mult) {
@@ -365,12 +365,12 @@ const ReferenceHandler = {
         }
       })
       if (scoring.rareCounties?.length >= 1) {
-        scoring.notices.push(`Rare!`)
+        scoring.notices.push('Rare!')
       }
       if (qp.bonus?.rareCountySweep) {
         const minimumCount = qp.bonus.rareCountySweepMinimumCount ?? qp.bonus.rareCountyQSOMultiplier?.length ?? 1
-        if (Object.keys(score?.rareCounties ?? {}).length == minimumCount - 1) {
-          if (scoring.rareCounties.find(c => !scoring.rareCounties[c] )) {
+        if (Object.keys(score?.rareCounties ?? {}).length === minimumCount - 1) {
+          if (scoring.rareCounties.find(c => !scoring.rareCounties[c])) {
             // If we're one short, and this QSO has a new one, replace notice with Sweep!
             scoring.notices[scoring.notices.length - 1] = 'Rare County Sweep!'
           }
@@ -714,7 +714,7 @@ const ReferenceHandler = {
   activitySpecificSpots: SpotsHook
 }
 
-function mainExchangeForOperation(props) {
+function mainExchangeForOperation (props) {
   const { qso, qsos, operation, updateQSO, styles, disabled, refStack } = props
 
   const qsoRef = findRef(qso?.refs, Info.key) || { type: Info.key, class: undefined, location: undefined }
@@ -816,15 +816,24 @@ function mainExchangeForOperation(props) {
   return fields
 }
 
-function prepareNewQSO({ operation, qso }) {
-  const ref = findRef(qso.refs, Info.key) || { type: Info.refType }
-  ref.ourNumber = `${operation.nextNumber || 1}`
-  qso.refs = replaceRef(qso.refs, Info.refType, ref)
-}
-
-async function processQSOBeforeSaveWithDispatch({ qso, qsos, operation, dispatch }) {
+function prepareNewQSO ({ operation, qso }) {
+  const qsoRef = findRef(qso.refs, Info.key) || { type: Info.key }
   const opRef = findRef(operation, Info.key)
   const qp = qpData({ ref: opRef })
+  const hasNumbers = (qp?.exchange?.find(field => field === 'Number') !== undefined)
+
+  if (hasNumbers) {
+    qsoRef.ourNumber = `${opRef.nextNumber || 1}`
+    qso.refs = replaceRef(qso.refs, Info.key, qsoRef)
+  }
+
+  return qso
+}
+
+async function processQSOBeforeSaveWithDispatch ({ qso, qsos, operation, dispatch }) {
+  const opRef = findRef(operation, Info.key)
+  const qp = qpData({ ref: opRef })
+
   if (opRef) {
     const ref = findRef(qso?.refs, Info.key) || { type: Info.key, class: undefined, location: undefined }
     ref.location = ref.location ?? _defaultLocationFor({ qp, qso, qsos, operation })
@@ -846,7 +855,7 @@ async function processQSOBeforeSaveWithDispatch({ qso, qsos, operation, dispatch
   return qso
 }
 
-function _suggestionsFor({ qso, qp }) {
+function _suggestionsFor ({ qso, qp }) {
   const prefix = qso?.their?.entityPrefix || qso?.their?.guess?.entityPrefix
   if (prefix === 'K') {
     if (qp.options.entity !== 'VE') {
@@ -864,7 +873,7 @@ function _suggestionsFor({ qso, qp }) {
   else return Object.entries({ ...qp.counties, ...US_STATES, ...CANADIAN_PROVINCES })
 }
 
-function _defaultLocationFor({ qso, qp, qsos, operation }) {
+function _defaultLocationFor ({ qso, qp, qsos, operation }) {
   const matching = qsos.filter(q => q.their?.call === qso?.their?.call)
   if (matching.length > 0) return matching[matching.length - 1].refs?.find(r => r.type === Info.key)?.location
 
@@ -882,7 +891,7 @@ function _defaultLocationFor({ qso, qp, qsos, operation }) {
   }
 }
 
-function _nearDupesFor({ qp, qso, qsos, operation, ourLocations, theirLocations, weAreInState, theyAreInState }) {
+function _nearDupesFor ({ qp, qso, qsos, operation, ourLocations, theirLocations, weAreInState, theyAreInState }) {
   let ourRollingLocations = qpParseLocations({ qp, location: findRef(operation, Info.key)?.location, weAreInState, theyAreInState })
 
   // debugger
@@ -908,7 +917,7 @@ function _nearDupesFor({ qp, qso, qsos, operation, ourLocations, theirLocations,
 
 const SLASH_OR_COMMA_REGEX = /[/,]/
 
-export function qpParseLocations({ qp, location, qso, weAreInState, theyAreInState }) {
+export function qpParseLocations ({ qp, location, qso, weAreInState, theyAreInState }) {
   const locations = location?.split(SLASH_OR_COMMA_REGEX) ?? []
   return locations
     .map(loc => qpNormalizeLocation({ qp, qso, location: loc, weAreInState, theyAreInState }))
@@ -917,12 +926,12 @@ export function qpParseLocations({ qp, location, qso, weAreInState, theyAreInSta
       return ({
         location: loc,
         name: qpNameForLocation({ qp, location: loc }),
-        inState: qpIsInState({ qp, location: loc }),
+        inState: qpIsInState({ qp, location: loc })
       })
     })
 }
 
-export function qpNormalizeLocation({ qp, qso, location, weAreInState, theyAreInState }) {
+export function qpNormalizeLocation ({ qp, qso, location, weAreInState, theyAreInState }) {
   location = location?.toUpperCase() || ''
   if (qp.counties[location]) {
     if (qp.options.countiesCountForInState === false) {
@@ -966,11 +975,11 @@ export function qpNormalizeLocation({ qp, qso, location, weAreInState, theyAreIn
   }
 }
 
-export function qpData({ ref }) {
+export function qpData ({ ref }) {
   return QSO_PARTY_DATA[ref?.ref] || { options: {}, counties: {}, points: {}, short: 'QSO Party' }
 }
 
-export function qpMultPrefix({ qp, band, mode, weAreInState }) {
+export function qpMultPrefix ({ qp, band, mode, weAreInState }) {
   if (qp.options.multsPerBandMode || (qp.options.inStateMultsPerBand && weAreInState) || (qp.options.outOfStateMultsPerBand && !weAreInState)) {
     return `${band}:${mode}:`
   } else if (qp.options.multsPerBand || (qp.options.inStateMultsPerBand && weAreInState) || (qp.options.outOfStateMultsPerBand && !weAreInState)) {
@@ -982,7 +991,7 @@ export function qpMultPrefix({ qp, band, mode, weAreInState }) {
   }
 }
 
-export function qpNameForLocation({ qp, location }) {
+export function qpNameForLocation ({ qp, location }) {
   location = location?.toUpperCase() || ''
   if (qp.counties[location]) {
     return qp.counties[location]
@@ -1007,12 +1016,12 @@ export function qpNameForLocation({ qp, location }) {
   }
 }
 
-export function qpIsInState({ qp, location }) {
+export function qpIsInState ({ qp, location }) {
   location = location?.toUpperCase() || ''
   return !!qp.counties[location]
 }
 
-export function qpLabelForLocation({ qp, location }) {
+export function qpLabelForLocation ({ qp, location }) {
   location = location?.toUpperCase() || ''
   if (qp.counties[location]) {
     return `In-state: *${location}* ${qp.counties[location]}`
@@ -1031,7 +1040,7 @@ export function qpLabelForLocation({ qp, location }) {
   }
 }
 
-function _qpShortForQP(qp) {
+function _qpShortForQP (qp) {
   if (qp.short) return qp.short
   if (qp.key.endsWith('QP')) return qp.key
   else return `${qp.key}QP`

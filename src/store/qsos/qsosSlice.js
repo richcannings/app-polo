@@ -1,5 +1,5 @@
 /*
- * Copyright ©️ 2024-2025 Sebastian Delmont <sd@ham2k.com>
+ * Copyright ©️ 2024-2026 Sebastian Delmont <sd@ham2k.com>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,8 +7,7 @@
 
 import { createSelector, createSlice } from '@reduxjs/toolkit'
 
-import { selectSettings } from '../settings'
-import { selectOperation } from '../operations'
+import { selectOperation, selectOperationCallInfo } from '../operations'
 import { analyzeAndSectionQSOs } from '../../extensions/scoring'
 
 const INITIAL_STATE = {
@@ -85,8 +84,9 @@ export const selectQSOs = createSelector(
 export const selectSectionedQSOs = createSelector(
   (state, uuid, showDeletedQSOs) => selectQSOs(state, uuid),
   (state, uuid, showDeletedQSOs) => selectOperation(state, uuid),
+  (state, uuid, showDeletedQSOs) => selectOperationCallInfo(state, uuid),
   (state, uuid, showDeletedQSOs) => showDeletedQSOs,
-  (qsos, operation, showDeletedQSOs) => analyzeAndSectionQSOs({ qsos, operation, showDeletedQSOs })
+  (qsos, operation, ourInfo, showDeletedQSOs) => analyzeAndSectionQSOs({ qsos, operation, ourInfo, showDeletedQSOs })
 )
 
 export default qsosSlice.reducer

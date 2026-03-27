@@ -1,5 +1,5 @@
 /*
- * Copyright ©️ 2024-2025 Sebastian Delmont <sd@ham2k.com>
+ * Copyright ©️ 2024-2026 Sebastian Delmont <sd@ham2k.com>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -20,7 +20,7 @@ const TWENTY_FOUR_HOURS_IN_MILLIS = 1000 * 60 * 60 * 24
 const VERBOSE = 0
 const DEBUG_KEYS = ['pota', 'qp']
 
-export function scoringHandlersForOperation({ operation }) {
+export function scoringHandlersForOperation ({ operation }) {
   const scoringKeys = {}
 
   // Get handlers for operation refs
@@ -60,12 +60,10 @@ export function scoringHandlersForOperation({ operation }) {
   scoringHandlers.push({ handler: BandsAndModesScoringHandler, ref: {} })
   scoringKeys[BandsAndModesScoringHandler.key] = true
 
-  return scoringHandlers
-
   return scoringHandlers.sort((a, b) => b.priority - a.priority)
 }
 
-export function analyzeAndSectionQSOs({ qsos, operation, showDeletedQSOs = true }) {
+export function analyzeAndSectionQSOs ({ qsos, operation, ourInfo, showDeletedQSOs = true }) {
   const t = GLOBAL?.t
 
   qsos = qsos ?? []
@@ -142,7 +140,7 @@ export function analyzeAndSectionQSOs({ qsos, operation, showDeletedQSOs = true 
       scoringHandlers.forEach(({ handler, ref }) => {
         const key = ref?.type ?? handler.key
 
-        const qsoScore = handler.scoringForQSO({ qso, qsos, operation, score: currentSection.scores[key], ref })
+        const qsoScore = handler.scoringForQSO({ qso, qsos, score: currentSection.scores[key], operation, ref, ourInfo })
 
         try {
           if (handler.accumulateScoreForDay) {
@@ -152,7 +150,6 @@ export function analyzeAndSectionQSOs({ qsos, operation, showDeletedQSOs = true 
           }
 
           if (VERBOSE && DEBUG_KEYS.includes(handler.key)) console.log(`-- ${handler.key}${handler.key !== key ? ` (${key})` : ' '} ${ref.ref ?? ref.location ?? ref.type}`, { ...qsoScore }, JSON.parse(JSON.stringify(currentSection.scores[key])))
-
         } catch (e) {
           reportError(`Error accumulating score for '${handler.key}' and qso '${qso.key}'`, e)
         }

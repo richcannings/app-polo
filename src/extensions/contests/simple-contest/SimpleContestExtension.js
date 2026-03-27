@@ -28,12 +28,8 @@ const Extension = {
   onActivationDispatch: ({ registerHook }) => async (dispatch) => {
     registerHook('activity', { hook: ActivityHook })
     registerHook(`ref:${Info.key}`, { hook: ReferenceHandler })
-
-    // registerQPDefinitionsDataFile()
-    // dispatch(loadDataFile('qp-definitions'))
   },
   onDeactivationDispatch: () => async (dispatch) => {
-    // await dispatch(removeDataFile('qp-definitions'))
   }
 }
 export default Extension

@@ -46,6 +46,7 @@ import GAPOTAExtension from './contests/gapota/GAPOTAExtension'
 import NAQPExtension from './contests/naqp/NAQPExtension'
 import QSOPartiesExtension from './contests/qp/QSOPartiesExtension'
 import SimpleContestExtension from './contests/simple-contest/SimpleContestExtension'
+import CQWPXExtension from './contests/cqwpx/CQWPXExtension'
 
 import AnnotationCommands from './commands/AnnotationCommands'
 import DebuggingCommands from './commands/DebuggingCommands'
@@ -97,6 +98,7 @@ export const loadExtensions = () => async (dispatch, getState) => {
   registerExtension(NAQPExtension)
   registerExtension(QSOPartiesExtension)
   registerExtension(SimpleContestExtension)
+  registerExtension(CQWPXExtension)
 
   registerExtension(AnnotationCommands)
   registerExtension(DebuggingCommands)

@@ -9,14 +9,14 @@ import packageJson from '../../package.json'
 import { findBestHook } from '../extensions/registry'
 import { basePartialTemplates, compileTemplateForOperation, extraDataForTemplates, templateContextForOneExport } from '../store/operations'
 import { selectExportSettings } from '../store/settings'
-import { escapeToUnicodeEntities, sanitizeToISO8859 } from './stringTools'
+import { escapeToUnicodeEntities } from './stringTools'
 import { fmtADIFDate, fmtADIFTime, fmtISODateTime } from './timeFormats'
 
 import { adifModeAndSubmodeForMode, frequencyForBand, modeForFrequency } from '@ham2k/lib-operation-data'
 
 const DEBUG = false
 
-export function qsonToADIF({ operation, settings, qsos, handler, format, title, exportType, includeOtherRefs, combineSegmentRefs, ADIFNotesTemplate, ADIFCommentTemplate, ADIFQslMsgTemplate }) {
+export function qsonToADIF ({ operation, settings, qsos, handler, format, title, exportType, includeOtherRefs, combineSegmentRefs, ADIFNotesTemplate, ADIFCommentTemplate, ADIFQslMsgTemplate }) {
   if (DEBUG) console.log('qsonToADIF operation', { ...operation })
   const templates = {
     key: `${handler.key}-${format}-${exportType ?? 'export'}`
@@ -52,7 +52,7 @@ export function qsonToADIF({ operation, settings, qsos, handler, format, title, 
     common.operatorCall = operation.local?.operatorCall || operation.operatorCall
   }
 
-  const eventQSOs = qsos.filter(qso => qso.event && !qso.deleted)
+  // const eventQSOs = qsos.filter(qso => qso.event && !qso.deleted)
 
   let str = ''
   str += `ADIF for ${title || ([common.stationCall, operation?.title, operation.subTitle].filter(x => x).join(' ')) || 'Operation'} \n`
@@ -73,7 +73,7 @@ export function qsonToADIF({ operation, settings, qsos, handler, format, title, 
     if (qso.deleted) return
     if (qso.event) {
       if (privateData) {
-        if (qso.event.event === 'break' || qso.event.event === 'start') str += "\n"
+        if (qso.event.event === 'break' || qso.event.event === 'start') str += '\n'
 
         const eventRecord = `${fmtISODateTime(qso.startAtMillis)}: ${qso.event.note ?? qso.event.message ?? qso.event.description.replaceAll(/ • /g, ' * ')}`
         str += adifField(`X_HAM2K_${qso.event.event?.toUpperCase() || 'EVENT'}`, eventRecord, { newLine: true })
@@ -87,7 +87,7 @@ export function qsonToADIF({ operation, settings, qsos, handler, format, title, 
           }
         }
 
-        if (qso.event.event === 'break' || qso.event.event === 'start') str += "\n"
+        if (qso.event.event === 'break' || qso.event.event === 'start') str += '\n'
       }
 
       if (qso.event.event === 'break' || qso.event.event === 'start') {
@@ -160,12 +160,12 @@ export function qsonToADIF({ operation, settings, qsos, handler, format, title, 
   return str
 }
 
-function escapeForHeader(str) {
+function escapeForHeader (str) {
   if (!str) return ''
   return str.replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-function modeToADIF(mode, freq, qsoInfo) {
+function modeToADIF (mode, freq, qsoInfo) {
   const modeAndSubmode = adifModeAndSubmodeForMode(mode)
   if (modeAndSubmode.length > 1) {
     return [{ MODE: modeAndSubmode[0] }, { SUBMODE: modeAndSubmode[1] }]
@@ -178,7 +178,7 @@ function modeToADIF(mode, freq, qsoInfo) {
   }
 }
 
-function adifFieldsForOneQSO({ qso, operation, common, privateData, templates, timeOffset }) {
+function adifFieldsForOneQSO ({ qso, operation, common, privateData, templates, timeOffset }) {
   timeOffset = timeOffset ?? 0
   const fields = [
     { CALL: qso.their.call },
@@ -186,7 +186,7 @@ function adifFieldsForOneQSO({ qso, operation, common, privateData, templates, t
     { BAND: qso.band && qso.band !== 'other' ? qso.band : undefined },
     { FREQ: ((Number(qso.freq ?? frequencyForBand(qso.band, qso.mode)) / 1000).toFixed(6)) }, // Round to six decimals (Hz)
     { TX_PWR: qso.power },
-    { RX_PWR: qso?.their?.power ?? qso?.guess?.power ?? qso?.their?.guess?.indicators?.includes("QRP") ? 5 : undefined },
+    { RX_PWR: qso?.their?.power ?? qso?.guess?.power ?? qso?.their?.guess?.indicators?.includes('QRP') ? 5 : undefined },
     { QSO_DATE: fmtADIFDate(qso.startAtMillis + timeOffset) },
     { TIME_ON: fmtADIFTime(qso.startAtMillis + timeOffset) },
     { RST_RCVD: qso.their.sent },
@@ -246,14 +246,14 @@ function adifFieldsForOneQSO({ qso, operation, common, privateData, templates, t
   return fields
 }
 
-function adifRow(fields) {
+function adifRow (fields) {
   return fields
     .filter(field => field[1] !== false)
     .map(field => adifField(Object.keys(field)[0], Object.values(field)[0]))
     .join('') + '<EOR>\n'
 }
 
-function adifField(name, value, options = {}) {
+function adifField (name, value, options = {}) {
   if (!value && !options.force) return ''
   if (typeof value !== 'string') value = value.toString()
 
@@ -269,7 +269,7 @@ function adifField(name, value, options = {}) {
   return `<${name}:${value?.length ?? 0}>${value}${options.newLine ? '\n' : ' '}`
 }
 
-function _cleanCounty(county, state) {
+function _cleanCounty (county, state) {
   if (!county) return undefined
 
   const parts = county.split(',')

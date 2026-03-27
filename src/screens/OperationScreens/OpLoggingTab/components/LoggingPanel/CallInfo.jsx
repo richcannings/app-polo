@@ -1,5 +1,5 @@
 /*
- * Copyright ©️ 2024-2025 Sebastian Delmont <sd@ham2k.com>
+ * Copyright ©️ 2024-2026 Sebastian Delmont <sd@ham2k.com>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -181,10 +181,10 @@ export function CallInfo ({ qso, qsos, activeQSOs, sections, operation, style, s
     const scoringHandlers = scoringHandlersForOperation({ operation, settings })
 
     const lastSection = sections && sections[sections.length - 1]
-    const scores = scoringHandlers.map(({ handler, ref }) => handler.scoringForQSO({ qso, qsos, score: lastSection?.scores?.[ref.type || ref.key], operation, ref })).filter(x => x)
+    const scores = scoringHandlers.map(({ handler, ref }) => handler.scoringForQSO({ qso, qsos, score: lastSection?.scores?.[ref.type || ref.key], operation, ref, ourInfo })).filter(x => x)
 
     return scores
-  }, [operation, qso, qsos, sections, settings])
+  }, [operation, qso, qsos, sections, settings, ourInfo])
 
   const messages = useMemo(() => {
     const newMessages = []
