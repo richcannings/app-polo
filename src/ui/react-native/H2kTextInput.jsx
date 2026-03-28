@@ -1,5 +1,5 @@
 /*
- * Copyright ©️ 2024-2025 Sebastian Delmont <sd@ham2k.com>
+ * Copyright ©️ 2024-2026 Sebastian Delmont <sd@ham2k.com>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -17,6 +17,7 @@ const LEFT_TRIM_REGEX = /^\s+/
 const SPACE_REGEX = /\s/g
 const DOUBLE_SPACE_REGEX = /\s\s/g
 const ONLY_SPACES_REGEX = /^\s+$/g
+const NOT_RST_WITH_SIGNS_REGEX = /[^0-9A+-]/g
 const NOT_NUMBER_WITH_SIGNS_REGEX = /[^0-9+-]/g
 const NOT_NUMBER_WITH_SIGNS_AND_PERIODS_REGEX = /[^0-9+-,.]/g
 const SIGN_AFTER_A_DIGIT_REGEX = /([\d,.])[+-]/g
@@ -172,13 +173,14 @@ export function H2kTextInput (props) {
           text = text.replace(NOT_NUMBER_WITH_SIGNS_AND_PERIODS_REGEX, '').replace(SIGN_AFTER_A_DIGIT_REGEX, '$1')
         }
         if (rst) {
-          text = text.replace(NOT_NUMBER_WITH_SIGNS_REGEX, '')
+          console.log('RST input', text)
+          text = text.toUpperCase().replace(NOT_RST_WITH_SIGNS_REGEX, '')
         }
 
         if (textTransformer) {
           text = textTransformer(text)
         }
-
+        console.log('RST input after', text)
         if (DEBUG) console.log(`H2KTextInput(${fieldId}) handleChange after transformations`, text)
         if (trackSelection && text.length !== stringValue.length) {
           if (DEBUG && fieldId === 'theirCall') console.log(`H2KTextInput(${fieldId}) handleChange length changed?`, selectionRef?.current?.start, selectionRef?.current?.end, text, stringValue, { lastChange: lastChangeRef.current })

@@ -1,4 +1,11 @@
 {
+  "26.2.6": {
+    "name": "February '26 (patch 5)",
+    "photoCaption": "HB9/OK1PTR/P at CH-0165",
+    "changes": [
+      "Allow `A` in RST inputs for Aurora signal reports"
+    ]
+  },
   "26.2.5": {
     "name": "February '26 (patch 5)",
     "photoCaption": "HB9/OK1PTR/P at CH-0165",
