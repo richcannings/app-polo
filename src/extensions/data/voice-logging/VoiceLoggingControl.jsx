@@ -77,11 +77,11 @@ export function VoiceLoggingControl (props) {
     <View style={[style, { flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
       {isActive && <KeepAwake />}
       <View style={{ flex: 1 }}>
-        <Text style={{ color: '#222', fontSize: 11 }} numberOfLines={1}>
+        <Text style={{ color: '#fff', fontSize: 11 }} numberOfLines={1}>
           {sessionState.lastStatus || statusLabel}
         </Text>
         {sessionState.lastTranscript ? (
-          <Text style={{ color: '#555', fontSize: 10, marginTop: 2 }} numberOfLines={2}>
+          <Text style={{ color: '#fff', fontSize: 10, marginTop: 2, opacity: 0.8 }} numberOfLines={2}>
             {sessionState.lastTranscript}
           </Text>
         ) : null}
