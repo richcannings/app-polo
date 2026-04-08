@@ -5,9 +5,11 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-import { createChunkedRecorder } from './audio'
+import { createChunkedRecorder, createStreamingRecorder } from './audio'
 import { transcribeAudio } from './whisper'
 import { extractQSO } from './extractor'
+import * as CWExtractor from './cw-extractor'
+import * as GGMorse from './ggmorse'
 
 // --- State ---
 let state = 'idle' // idle | listening | processing | paused | error
@@ -44,6 +46,12 @@ let pendingResults = []
 // Last transcript for display
 let lastTranscript = ''
 let lastStatus = ''
+
+// CW mode state
+let cwTextBuffer = ''
+let cwExtractionTimer = null
+let cwUnsubText = null
+let cwUnsubStats = null
 
 // --- Listener pattern ---
 function setState (newState) {
@@ -253,11 +261,79 @@ function doSubmit () {
   }, 2000)
 }
 
+// --- CW pipeline ---
+function handleCWAudioChunk (base64Pcm) {
+  // Feed raw PCM directly to ggmorse — it decodes and emits events
+  GGMorse.feedAudio(base64Pcm)
+}
+
+function handleCWText (text) {
+  if (!text) return
+  console.log('VoiceLogging CW: decoded:', text)
+
+  cwTextBuffer += text
+  lastTranscript = cwTextBuffer.slice(-80) // show last 80 chars
+  notifyListeners()
+
+  // Debounce extraction — wait for a pause in decoded text before running LLM
+  if (cwExtractionTimer) clearTimeout(cwExtractionTimer)
+  cwExtractionTimer = setTimeout(() => runCWExtraction(), 3000)
+}
+
+async function runCWExtraction () {
+  if (!cwTextBuffer.trim() || pipelineBusy) return
+
+  pipelineBusy = true
+  setState('processing')
+
+  try {
+    const result = await CWExtractor.extractCW(cwTextBuffer, sessionContext)
+    if (result && result.intent !== 'noise') {
+      lastStatus = `${result.intent}: ${result.callsign || '...'}`
+      applyExtraction(result)
+
+      // Clear buffer after successful extraction with a submit
+      if (result.submit) {
+        cwTextBuffer = ''
+      }
+    }
+  } catch (err) {
+    console.log('VoiceLogging CW: extraction error:', err.message)
+    lastStatus = `error: ${err.message}`
+  } finally {
+    pipelineBusy = false
+    if (state !== 'paused' && state !== 'idle') {
+      setState('listening')
+    }
+  }
+}
+
+function handleCWStats (stats) {
+  if (stats.pitch > 0 && stats.wpm > 0) {
+    lastStatus = `CW: ${Math.round(stats.pitch)} Hz / ${Math.round(stats.wpm)} WPM`
+    notifyListeners()
+  }
+}
+
+function isCWMode () {
+  const mode = (sessionContext.mode || '').toUpperCase()
+  return mode === 'CW' || mode === 'CWR'
+}
+
 // --- Session lifecycle ---
 export function startSession (key) {
   if (state === 'listening' || state === 'processing') return
 
   apiKey = key
+
+  if (isCWMode()) {
+    startCWSession()
+  } else {
+    startSSBSession()
+  }
+}
+
+function startSSBSession () {
   if (!apiKey) {
     setState('error')
     lastStatus = 'no API key'
@@ -272,7 +348,7 @@ export function startSession (key) {
   recorder.start().then(started => {
     if (started) {
       setState('listening')
-      lastStatus = 'listening'
+      lastStatus = 'listening (SSB)'
     } else {
       setState('error')
       lastStatus = 'mic permission denied'
@@ -280,11 +356,68 @@ export function startSession (key) {
   })
 }
 
+async function startCWSession () {
+  cwTextBuffer = ''
+
+  // Initialize LLM model for CW extraction
+  lastStatus = 'loading CW model...'
+  notifyListeners()
+  const modelReady = await CWExtractor.initModel((progress) => {
+    if (progress < 1) {
+      lastStatus = `downloading model: ${Math.round(progress * 100)}%`
+    } else {
+      lastStatus = 'loading model...'
+    }
+    notifyListeners()
+  })
+  if (!modelReady) {
+    setState('error')
+    lastStatus = 'CW model failed to load'
+    return
+  }
+
+  // Start ggmorse decoder
+  const started = await GGMorse.startDecoder(16000)
+  if (!started) {
+    setState('error')
+    lastStatus = 'ggmorse init failed'
+    return
+  }
+
+  // Subscribe to decoded text and stats events
+  cwUnsubText = GGMorse.onText(handleCWText)
+  cwUnsubStats = GGMorse.onStats(handleCWStats)
+
+  // Start streaming recorder — feeds raw PCM to ggmorse
+  recorder = createStreamingRecorder({
+    onData: handleCWAudioChunk
+  })
+
+  const micStarted = await recorder.start()
+  if (micStarted) {
+    setState('listening')
+    lastStatus = 'listening (CW)'
+  } else {
+    await GGMorse.stopDecoder()
+    setState('error')
+    lastStatus = 'mic permission denied'
+  }
+}
+
 export function stopSession () {
   if (recorder) {
     recorder.stop()
     recorder = null
   }
+
+  // Clean up CW resources
+  if (cwUnsubText) { cwUnsubText(); cwUnsubText = null }
+  if (cwUnsubStats) { cwUnsubStats(); cwUnsubStats = null }
+  if (cwExtractionTimer) { clearTimeout(cwExtractionTimer); cwExtractionTimer = null }
+  cwTextBuffer = ''
+  GGMorse.stopDecoder()
+  // Note: we keep the LLM model loaded to avoid re-download/reload on resume
+
   pipelineBusy = false
   sessionContext.currentQSOCall = ''
   clearLocks()

@@ -194,3 +194,66 @@ export function createChunkedRecorder ({ onChunk, onSilence }) {
 
   return { start, stop, pause, resume }
 }
+
+// Create a streaming recorder that forwards every PCM chunk directly (for CW/ggmorse)
+// onData(base64PcmChunk) is called for each raw audio data event
+export function createStreamingRecorder ({ onData: onDataCallback }) {
+  let isRunning = false
+
+  function onData (data) {
+    if (isRunning && onDataCallback) {
+      onDataCallback(data)
+    }
+  }
+
+  async function start () {
+    if (isRunning) return false
+
+    const hasPermission = await requestMicPermission()
+    if (!hasPermission) return false
+
+    isRunning = true
+
+    LiveAudioStream.init({
+      sampleRate: SAMPLE_RATE,
+      channels: CHANNELS,
+      bitsPerSample: BITS_PER_SAMPLE,
+      audioSource: 6
+    })
+
+    LiveAudioStream.on('data', onData)
+    LiveAudioStream.start()
+    console.log('VoiceLogging: Streaming recorder started (CW mode)')
+    return true
+  }
+
+  function stop () {
+    isRunning = false
+    LiveAudioStream.stop()
+    console.log('VoiceLogging: Streaming recorder stopped')
+  }
+
+  function pause () {
+    isRunning = false
+    LiveAudioStream.stop()
+    console.log('VoiceLogging: Streaming recorder paused')
+  }
+
+  function resume () {
+    if (isRunning) return
+    isRunning = true
+
+    LiveAudioStream.init({
+      sampleRate: SAMPLE_RATE,
+      channels: CHANNELS,
+      bitsPerSample: BITS_PER_SAMPLE,
+      audioSource: 6
+    })
+
+    LiveAudioStream.on('data', onData)
+    LiveAudioStream.start()
+    console.log('VoiceLogging: Streaming recorder resumed')
+  }
+
+  return { start, stop, pause, resume }
+}

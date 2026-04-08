@@ -11,6 +11,7 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 
 import cl.json.ShareApplication
+import com.ham2k.polo.ggmorse.GGMorsePackage
 
 class MainApplication : Application(), ReactApplication, ShareApplication {
 
@@ -20,7 +21,7 @@ class MainApplication : Application(), ReactApplication, ShareApplication {
       packageList =
         PackageList(this).packages.apply {
           // Packages that cannot be autolinked yet can be added manually here, for example:
-          // add(MyReactNativePackage())
+          add(GGMorsePackage())
         }
     )
   }
