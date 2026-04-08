@@ -74,6 +74,7 @@
     "react-native-gesture-handler": "2.30.0",
     "react-native-get-item-layout-section-list": "0.1.1",
     "react-native-keyboard-controller": "1.20.7",
+    "react-native-live-audio-stream": "^1.1.1",
     "react-native-localize": "3.6.1",
     "react-native-markdown-display": "7.0.2",
     "react-native-pager-view": "8.0.0",

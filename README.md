@@ -1,4 +1,8 @@
-# Ham2K Portable Logger - PoLo
+# Ham2K Portable Logger - PoLo (Voice Logging Fork)
+
+This is a fork of [Ham2K PoLo](https://github.com/ham2k/app-polo) that adds hands-free voice-controlled logging. It uses OpenAI Whisper for speech-to-text and GPT-4o-mini for QSO data extraction, enabling continuous voice-driven contact logging during POTA activations and other portable operations.
+
+---
 
 The fastest, easiest, bestest way to log your amateur radio operations on the go.
 

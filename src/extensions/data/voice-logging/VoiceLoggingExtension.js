@@ -6,6 +6,7 @@
  */
 
 import { VoiceLoggingAccountSetting } from './VoiceLoggingAccount'
+import { VoiceLoggingChip } from './VoiceLoggingChip'
 import { VoiceLoggingControl } from './VoiceLoggingControl'
 
 export const Info = {
@@ -45,8 +46,9 @@ const ActivityHook = {
       order: 50,
       icon: Info.icon,
       label: 'Voice',
+      LabelComponent: VoiceLoggingChip,
       InputComponent: VoiceLoggingControl,
-      inputWidthMultiplier: 20,
+      inputWidthMultiplier: 30,
       optionType: 'optional'
     }]
   }
