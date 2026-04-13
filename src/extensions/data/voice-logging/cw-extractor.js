@@ -119,7 +119,7 @@ export async function initModel (onProgress) {
     console.log('CW-Extractor: Loading model...')
     llamaContext = await initLlama({
       model: modelPath,
-      n_ctx: 512,
+      n_ctx: 2048,
       n_gpu_layers: 0,
       n_threads: 4
     }, (progress) => {
@@ -173,15 +173,30 @@ export async function extractCW (decodedText, context = {}) {
   try {
     const result = await llamaContext.completion({
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: SYSTEM_PROMPT + '\n\nYou MUST respond with valid JSON only. No other text.' },
         { role: 'user', content: userPrompt }
       ],
-      n_predict: 128,
+      n_predict: 256,
       temperature: 0,
-      json_schema: JSON_SCHEMA
+      stop: ['\n\n', '</s>']
     })
 
-    const parsed = JSON.parse(result.text)
+    const rawText = result.text.trim()
+    console.log('CW-Extractor: Raw response:', rawText.slice(0, 300))
+
+    // Try direct parse first, then extract JSON from surrounding text
+    let parsed
+    try {
+      parsed = JSON.parse(rawText)
+    } catch (_) {
+      // Look for JSON object in the response
+      const match = rawText.match(/\{[\s\S]*\}/)
+      if (match) {
+        parsed = JSON.parse(match[0])
+      } else {
+        throw new Error('No JSON found in response: ' + rawText.slice(0, 100))
+      }
+    }
     console.log('CW-Extractor: Extracted:', JSON.stringify(parsed))
     return parsed
   } catch (err) {

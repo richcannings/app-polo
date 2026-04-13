@@ -10,7 +10,7 @@ import LoggerChip from '../../../screens/OperationScreens/components/LoggerChip'
 import * as VoiceSession from './VoiceSession'
 
 export function VoiceLoggingChip (props) {
-  const { selected, onChange, settings, ...rest } = props
+  const { selected, onChange, settings, vfo, operation, ...rest } = props
   const [sessionState, setSessionState] = useState(VoiceSession.getState())
 
   useEffect(() => {
@@ -32,8 +32,9 @@ export function VoiceLoggingChip (props) {
       // Select the control — InputComponent mounts and auto-starts session
       onChange && onChange(true)
     } else if (isActive) {
-      // Pause recording but keep panel open
-      VoiceSession.pauseSession()
+      // Stop recording and hide the info bar
+      VoiceSession.stopSession()
+      onChange && onChange(false)
     } else if (sessionState.state === 'paused') {
       // Resume recording
       VoiceSession.resumeSession()
@@ -45,10 +46,6 @@ export function VoiceLoggingChip (props) {
   }, [selected, isActive, sessionState.state, onChange])
 
   const iconName = isActive ? 'microphone' : 'microphone-off'
-  const iconColor = isActive ? '#4CAF50'
-    : sessionState.state === 'paused' ? '#FF9800'
-    : sessionState.state === 'error' ? '#F44336'
-    : undefined
 
   return (
     <LoggerChip
@@ -56,10 +53,12 @@ export function VoiceLoggingChip (props) {
       styles={rest.styles}
       selected={selected}
       icon={iconName}
-      iconColor={iconColor}
       onChange={handleChange}
     >
-      Voice
+      {(() => {
+        const mode = (vfo?.mode || operation?.local?.mode || '').toUpperCase()
+        return (mode === 'CW' || mode === 'CWR') ? 'Decode' : 'Voice'
+      })()}
     </LoggerChip>
   )
 }

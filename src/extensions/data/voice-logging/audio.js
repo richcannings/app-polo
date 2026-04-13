@@ -197,6 +197,8 @@ export function createChunkedRecorder ({ onChunk, onSilence }) {
 
 // Create a streaming recorder that forwards every PCM chunk directly (for CW/ggmorse)
 // onData(base64PcmChunk) is called for each raw audio data event
+// Uses audioSource 1 (MIC) instead of 6 (VOICE_RECOGNITION) to avoid
+// Android's noise suppression and AGC which destroy CW tones
 export function createStreamingRecorder ({ onData: onDataCallback }) {
   let isRunning = false
 
@@ -218,7 +220,7 @@ export function createStreamingRecorder ({ onData: onDataCallback }) {
       sampleRate: SAMPLE_RATE,
       channels: CHANNELS,
       bitsPerSample: BITS_PER_SAMPLE,
-      audioSource: 6
+      audioSource: 1 // MIC — raw input, no noise suppression/AGC
     })
 
     LiveAudioStream.on('data', onData)
@@ -247,7 +249,7 @@ export function createStreamingRecorder ({ onData: onDataCallback }) {
       sampleRate: SAMPLE_RATE,
       channels: CHANNELS,
       bitsPerSample: BITS_PER_SAMPLE,
-      audioSource: 6
+      audioSource: 1 // MIC — raw input, no noise suppression/AGC
     })
 
     LiveAudioStream.on('data', onData)

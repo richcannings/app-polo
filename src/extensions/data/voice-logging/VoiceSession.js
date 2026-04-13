@@ -7,7 +7,7 @@
 
 import { createChunkedRecorder, createStreamingRecorder } from './audio'
 import { transcribeAudio } from './whisper'
-import { extractQSO } from './extractor'
+import { extractQSO, extractCW } from './extractor'
 import * as CWExtractor from './cw-extractor'
 import * as GGMorse from './ggmorse'
 
@@ -22,6 +22,8 @@ let pipelineBusy = false
 let updateQSOFn = null
 let onSubmitFn = null
 let handleFieldChangeFn = null
+let correctLogEntryFn = null
+let changeVFOFn = null
 
 // Session context
 let sessionContext = {
@@ -60,8 +62,9 @@ function setState (newState) {
 }
 
 function notifyListeners () {
+  const mode = isCWMode() ? 'CW' : 'SSB'
   listeners.forEach(fn => {
-    try { fn({ state, lastTranscript, lastStatus }) } catch (e) { /* ignore */ }
+    try { fn({ state, lastTranscript, lastStatus, mode }) } catch (e) { /* ignore */ }
   })
 }
 
@@ -71,15 +74,17 @@ export function subscribe (fn) {
 }
 
 export function getState () {
-  return { state, lastTranscript, lastStatus }
+  return { state, lastTranscript, lastStatus, mode: isCWMode() ? 'CW' : 'SSB' }
 }
 
 // --- Callbacks ---
-export function setCallbacks ({ updateQSO, onSubmitEditing, handleFieldChange }) {
-  console.log('VoiceLogging: setCallbacks', !!updateQSO, !!onSubmitEditing, !!handleFieldChange)
+export function setCallbacks ({ updateQSO, onSubmitEditing, handleFieldChange, correctLogEntry, changeVFO }) {
+  console.log('VoiceLogging: setCallbacks', !!updateQSO, !!onSubmitEditing, !!handleFieldChange, !!correctLogEntry, !!changeVFO)
   updateQSOFn = updateQSO
   onSubmitFn = onSubmitEditing
   handleFieldChangeFn = handleFieldChange
+  correctLogEntryFn = correctLogEntry
+  changeVFOFn = changeVFO
 
   // Drain pending results
   if (pendingResults.length > 0) {
@@ -93,6 +98,8 @@ export function clearCallbacks () {
   updateQSOFn = null
   onSubmitFn = null
   handleFieldChangeFn = null
+  correctLogEntryFn = null
+  changeVFOFn = null
 }
 
 export function setSessionContext (ctx) {
@@ -111,6 +118,27 @@ function clearLocks () {
 
 export function getLastWrittenValues () {
   return { ...lastWrittenValues }
+}
+
+// Manual field population from ticker tape tap
+export function populateField (fieldId, value) {
+  if (!value) return
+  if (fieldId === 'theirCall' && handleFieldChangeFn) {
+    const v = value.toUpperCase()
+    handleFieldChangeFn({ fieldId: 'theirCall', value: v })
+    lastWrittenValues.theirCall = v
+    sessionContext.currentQSOCall = v
+  } else if (fieldId === 'ourSent' && updateQSOFn) {
+    updateQSOFn({ our: { sent: value } })
+    lastWrittenValues.ourSent = value
+  } else if (fieldId === 'theirSent' && updateQSOFn) {
+    updateQSOFn({ their: { sent: value } })
+    lastWrittenValues.theirSent = value
+  } else if (fieldId === 'state' && handleFieldChangeFn) {
+    const v = value.toUpperCase()
+    handleFieldChangeFn({ fieldId: 'state', value: v })
+    lastWrittenValues.state = v
+  }
 }
 
 // --- Pipeline ---
@@ -164,6 +192,13 @@ function applyExtraction (result) {
 
   if (result.intent === 'noise') return
 
+  // Drop operator's own callsign — never log yourself
+  if (result.callsign && sessionContext.operatorCall &&
+      result.callsign.toUpperCase() === sessionContext.operatorCall.toUpperCase()) {
+    console.log('VoiceLogging: Dropping operator callsign from extraction:', result.callsign)
+    result.callsign = ''
+  }
+
   if (result.intent === 'new_qso') {
     if (result.callsign) {
       // Different callsign while we have an existing QSO → auto-submit first
@@ -187,36 +222,53 @@ function applyExtraction (result) {
   if (result.intent === 'correction') {
     applyCorrectionResult(result)
   }
+
+  if (result.intent === 'log_correction') {
+    applyLogCorrection(result)
+  }
+
+  if (result.intent === 'session_update') {
+    applySessionUpdate(result)
+  }
 }
 
 function populateQSO (result) {
   const callUpper = result.callsign?.toUpperCase()
 
   // Callsign — use handleFieldChange to trigger lookup pipeline
-  if (callUpper && !lockedFields.has('theirCall')) {
-    if (handleFieldChangeFn) {
+  // Always update if different (even if we had one before — later extractions are more accurate)
+  if (callUpper && !lockedFields.has('theirCall') && handleFieldChangeFn) {
+    if (callUpper !== lastWrittenValues.theirCall) {
       handleFieldChangeFn({ fieldId: 'theirCall', value: callUpper })
       lastWrittenValues.theirCall = callUpper
-      sessionContext.currentQSOCall = callUpper
     }
+    sessionContext.currentQSOCall = callUpper
   }
 
   // RST sent (what operator told them) → our.sent column
+  // Only update if non-empty and different from current value
   if (result.rst_sent && !lockedFields.has('ourSent') && updateQSOFn) {
-    updateQSOFn({ our: { sent: result.rst_sent } })
-    lastWrittenValues.ourSent = result.rst_sent
+    if (result.rst_sent !== lastWrittenValues.ourSent) {
+      updateQSOFn({ our: { sent: result.rst_sent } })
+      lastWrittenValues.ourSent = result.rst_sent
+    }
   }
 
   // RST received (what they told operator) → their.sent column
   if (result.rst_rcvd && !lockedFields.has('theirSent') && updateQSOFn) {
-    updateQSOFn({ their: { sent: result.rst_rcvd } })
-    lastWrittenValues.theirSent = result.rst_rcvd
+    if (result.rst_rcvd !== lastWrittenValues.theirSent) {
+      updateQSOFn({ their: { sent: result.rst_rcvd } })
+      lastWrittenValues.theirSent = result.rst_rcvd
+    }
   }
 
-  // State
+  // State — only set, never blank out an existing value
   if (result.state && !lockedFields.has('state') && handleFieldChangeFn) {
-    handleFieldChangeFn({ fieldId: 'state', value: result.state.toUpperCase() })
-    lastWrittenValues.state = result.state.toUpperCase()
+    const stateUpper = result.state.toUpperCase()
+    if (stateUpper !== lastWrittenValues.state) {
+      handleFieldChangeFn({ fieldId: 'state', value: stateUpper })
+      lastWrittenValues.state = stateUpper
+    }
   }
 }
 
@@ -239,6 +291,65 @@ function applyCorrectionResult (result) {
   }
 }
 
+function applySessionUpdate (result) {
+  if (!changeVFOFn) {
+    console.log('VoiceLogging: session_update no changeVFO callback')
+    return
+  }
+
+  const update = {}
+  if (result.frequency) update.freq = parseFloat(result.frequency)
+  if (result.band) update.band = result.band
+  if (result.mode) update.mode = result.mode.toUpperCase()
+
+  if (Object.keys(update).length === 0) return
+
+  console.log('VoiceLogging: session_update applying:', JSON.stringify(update))
+  changeVFOFn(update)
+  lastStatus = `VFO: ${result.frequency ? result.frequency + ' MHz' : result.band || result.mode}`
+  notifyListeners()
+}
+
+function applyLogCorrection (result) {
+  const searchCall = result.search_call?.toUpperCase()
+  if (!searchCall) {
+    console.log('VoiceLogging: log_correction missing search_call')
+    return
+  }
+
+  // Check if the search_call matches the current QSO being edited
+  if (sessionContext.currentQSOCall === searchCall) {
+    console.log('VoiceLogging: log_correction matches current QSO, applying inline')
+    // Apply corrections to the current QSO using existing mechanisms
+    const corrections = {}
+    if (result.callsign) corrections.callsign = result.callsign
+    if (result.rst_sent) corrections.rst_sent = result.rst_sent
+    if (result.rst_rcvd) corrections.rst_rcvd = result.rst_rcvd
+    if (result.state) corrections.state = result.state
+    populateQSO({ ...corrections, intent: 'new_qso' })
+    lastStatus = `fixed current: ${searchCall}`
+    notifyListeners()
+    return
+  }
+
+  // Otherwise, correct an already-submitted log entry
+  if (!correctLogEntryFn) {
+    console.log('VoiceLogging: log_correction no callback available')
+    return
+  }
+
+  const corrections = {}
+  if (result.callsign) corrections.theirCall = result.callsign.toUpperCase()
+  if (result.rst_sent) corrections.ourSent = result.rst_sent
+  if (result.rst_rcvd) corrections.theirSent = result.rst_rcvd
+  if (result.state) corrections.state = result.state.toUpperCase()
+
+  console.log('VoiceLogging: log_correction searching for', searchCall, 'corrections:', JSON.stringify(corrections))
+  const success = correctLogEntryFn(searchCall, corrections)
+  lastStatus = success ? `fixed: ${searchCall}` : `not found: ${searchCall}`
+  notifyListeners()
+}
+
 function doSubmit () {
   if (!onSubmitFn || submitCooldownActive) return
 
@@ -253,6 +364,10 @@ function doSubmit () {
   onSubmitFn()
   sessionContext.currentQSOCall = ''
   clearLocks()
+  lastRegexCallsign = ''
+  lastRegexRST = ''
+  lastRegexState = ''
+  cwTextBuffer = ''
 
   // Cooldown to prevent double-submit
   submitCooldownActive = true
@@ -261,45 +376,125 @@ function doSubmit () {
   }, 2000)
 }
 
+// --- CW regex pre-extraction (instant, no API call) ---
+// Only handles RST reports — the one pattern regex does reliably.
+// Callsigns, states, and submit are left to GPT which has full context.
+
+// RST pattern: 3-char report starting with 4 or 5, may contain cut numbers (N=9, T=0)
+const RST_RE = /\b([45][0-9NT][0-9NT])\b/g
+
+function expandCutNumbers (rst) {
+  return rst.replace(/N/g, '9').replace(/T/g, '0').replace(/A/g, '1').replace(/U/g, '2').replace(/V/g, '3').replace(/B/g, '7').replace(/D/g, '8')
+}
+
+function cwRegexPreExtract (buffer) {
+  const raw = buffer.toUpperCase()
+
+  // Collapse single-char tokens: "5 5 N" → "55N"
+  const collapsed = raw.replace(/\b(\S)\s+(?=\S\b)/g, '$1')
+
+  // Find RST reports
+  const rsts = []
+  let m
+  RST_RE.lastIndex = 0
+  while ((m = RST_RE.exec(collapsed)) !== null) {
+    rsts.push(expandCutNumbers(m[1]))
+  }
+
+  if (rsts.length === 0) return null
+
+  const rst_sent = rsts[0]
+  const rst_rcvd = rsts.length >= 2 ? rsts[1] : rsts[0]
+
+  return { intent: 'new_qso', callsign: '', rst_sent, rst_rcvd, state: '', submit: false }
+}
+
+let lastRegexRST = ''
+
+function tryCWRegexExtraction () {
+  if (!cwTextBuffer.trim()) return
+
+  const result = cwRegexPreExtract(cwTextBuffer)
+  if (!result) return
+
+  if (result.rst_sent && result.rst_sent !== lastRegexRST) {
+    console.log('VoiceLogging CW regex: instant RST:', result.rst_sent)
+    lastRegexRST = result.rst_sent
+    applyExtraction(result)
+  }
+}
+
 // --- CW pipeline ---
+let cwAudioChunkCount = 0
 function handleCWAudioChunk (base64Pcm) {
+  cwAudioChunkCount++
+  if (cwAudioChunkCount <= 3 || cwAudioChunkCount % 100 === 0) {
+    console.log('VoiceLogging CW: feedAudio chunk #' + cwAudioChunkCount + ' len=' + base64Pcm.length)
+  }
   // Feed raw PCM directly to ggmorse — it decodes and emits events
   GGMorse.feedAudio(base64Pcm)
 }
 
+// Max WPM threshold — decodes above this are noise from ggmorse false triggers
+const CW_MAX_WPM = 28
+// Max cost function — higher means worse decode confidence (ggmorse uses < 1.0 internally)
+const CW_MAX_COST = 0.7
+
 function handleCWText (text) {
   if (!text) return
-  console.log('VoiceLogging CW: decoded:', text)
+  // Filter out noise: high WPM readings are false triggers, not real CW
+  if (cwLastWPM > CW_MAX_WPM) {
+    console.log('VoiceLogging CW: filtered wpm=' + Math.round(cwLastWPM) + ':', text)
+    return
+  }
+  // Filter low-confidence decodes — cost > threshold means poor timing match
+  if (cwLastCost > CW_MAX_COST) {
+    console.log('VoiceLogging CW: filtered cost=' + cwLastCost.toFixed(2) + ':', text)
+    return
+  }
 
-  cwTextBuffer += text
+  // Strip non-CW characters — ggmorse can emit newlines and other garbage
+  const cleaned = text.replace(/[^A-Za-z0-9/?. -]/g, '')
+  if (!cleaned) return
+  console.log('VoiceLogging CW: decoded (cost=' + cwLastCost.toFixed(2) + ' wpm=' + Math.round(cwLastWPM) + '):', cleaned)
+
+  cwTextBuffer += cleaned
   lastTranscript = cwTextBuffer.slice(-80) // show last 80 chars
   notifyListeners()
 
-  // Debounce extraction — wait for a pause in decoded text before running LLM
+  // Instant regex pre-extraction — populate fields as soon as patterns emerge
+  tryCWRegexExtraction()
+
+  // Debounce GPT extraction — refines/corrects what regex found
   if (cwExtractionTimer) clearTimeout(cwExtractionTimer)
-  cwExtractionTimer = setTimeout(() => runCWExtraction(), 3000)
+  cwExtractionTimer = setTimeout(() => runCWExtraction(), 1500)
 }
 
 async function runCWExtraction () {
-  if (!cwTextBuffer.trim() || pipelineBusy) return
+  // Need at least 3 non-space chars to attempt extraction — single chars produce garbage
+  if (!cwTextBuffer.trim() || cwTextBuffer.replace(/\s/g, '').length < 3 || pipelineBusy) return
 
   pipelineBusy = true
   setState('processing')
 
+  // Only send last 200 chars to avoid context overflow
+  const textForExtraction = cwTextBuffer.slice(-200).trim()
+  console.log('VoiceLogging CW: extracting from:', JSON.stringify(textForExtraction))
+
   try {
-    const result = await CWExtractor.extractCW(cwTextBuffer, sessionContext)
+    // Use GPT-4o-mini for CW extraction (better domain knowledge than on-device LLM)
+    const result = await extractCW(textForExtraction, apiKey, sessionContext)
+    console.log('VoiceLogging CW: extraction result:', JSON.stringify(result))
     if (result && result.intent !== 'noise') {
       lastStatus = `${result.intent}: ${result.callsign || '...'}`
       applyExtraction(result)
-
-      // Clear buffer after successful extraction with a submit
-      if (result.submit) {
-        cwTextBuffer = ''
-      }
     }
+    // Always clear buffer after extraction to avoid reprocessing
+    cwTextBuffer = ''
   } catch (err) {
     console.log('VoiceLogging CW: extraction error:', err.message)
     lastStatus = `error: ${err.message}`
+    cwTextBuffer = '' // clear on error too
   } finally {
     pipelineBusy = false
     if (state !== 'paused' && state !== 'idle') {
@@ -308,9 +503,13 @@ async function runCWExtraction () {
   }
 }
 
+let cwLastWPM = 0
+let cwLastCost = 0
 function handleCWStats (stats) {
   if (stats.pitch > 0 && stats.wpm > 0) {
-    lastStatus = `CW: ${Math.round(stats.pitch)} Hz / ${Math.round(stats.wpm)} WPM`
+    cwLastWPM = stats.wpm
+    cwLastCost = stats.cost || 0
+    lastStatus = `CW: ${Math.round(stats.pitch)} Hz / ${Math.round(stats.wpm)} WPM / cost=${stats.cost?.toFixed(2)}`
     notifyListeners()
   }
 }
@@ -359,20 +558,9 @@ function startSSBSession () {
 async function startCWSession () {
   cwTextBuffer = ''
 
-  // Initialize LLM model for CW extraction
-  lastStatus = 'loading CW model...'
-  notifyListeners()
-  const modelReady = await CWExtractor.initModel((progress) => {
-    if (progress < 1) {
-      lastStatus = `downloading model: ${Math.round(progress * 100)}%`
-    } else {
-      lastStatus = 'loading model...'
-    }
-    notifyListeners()
-  })
-  if (!modelReady) {
+  if (!apiKey) {
     setState('error')
-    lastStatus = 'CW model failed to load'
+    lastStatus = 'no API key'
     return
   }
 
@@ -395,8 +583,8 @@ async function startCWSession () {
 
   const micStarted = await recorder.start()
   if (micStarted) {
-    setState('listening')
     lastStatus = 'listening (CW)'
+    setState('listening')
   } else {
     await GGMorse.stopDecoder()
     setState('error')
